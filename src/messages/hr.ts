@@ -1,4 +1,15 @@
 export default {
+  deleteModule: "Trajno brisanje modula",
+  deleteStudent: "Trajno brisanje polaznika",
+  deleteModuleHelp: "Brišu se modul, njegove lekcije, povezani privici i naslovnica, dodijeljeni pristupi i napredak svih polaznika u tom modulu. Nema vraćanja iz arhive nakon brisanja. Videozapisi ostaju u Bunny biblioteci.",
+  deleteStudentHelp: "Brišu se račun za prijavu, profil, svi dodijeljeni pristupi i napredak ovog polaznika. Ova radnja nije povratna.",
+  permanentDelete: "Trajno obriši",
+  deleteConfirmLabel: "Za potvrdu upišite točno",
+  cancelDelete: "Odustani",
+  deleteFailed: "Brisanje nije uspjelo. Osvježite stranicu i provjerite da je modul arhiviran ili polaznik neaktivan te da potvrda odgovara. Ako se pogreška ponovi, provjerite postavke brisanja.",
+  cleanupPending: "Modul je obrisan, ali neke njegove datoteke još čekaju čišćenje. Pokušajte ponovno.",
+  retryCleanup: "Ponovi čišćenje datoteka",
+
   archive: "Arhiva",
   activeModules: "Aktivni moduli",
   archiveModule: "Arhiviraj modul",

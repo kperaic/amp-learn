@@ -20,8 +20,9 @@ async function count(table) {
   return (await db.query(`select * from public.${table}`)).rows.length;
 }
 before(async () => {
-  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create schema storage;
-create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz);create table auth.sessions(id uuid primary key,user_id uuid references auth.users);
+  await db.exec(`create role anon;create role authenticated;create role supabase_auth_admin;create role service_role bypassrls;create schema auth;create schema storage;
+create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz);create table auth.sessions(id uuid primary key,user_id uuid references auth.users on delete cascade);
+grant usage on schema auth to supabase_auth_admin;grant select,delete on auth.users to supabase_auth_admin;
 create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
 create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid$$;
 grant usage on schema public,auth,storage to authenticated,anon,service_role;
@@ -33,6 +34,7 @@ alter table storage.objects enable row level security;grant select,insert,update
     "202611240002_private_storage.sql",
     "202611240003_admin_experience.sql",
     "202611250004_module_archive.sql",
+    "202611250005_permanent_deletion.sql",
   ])
     await db.exec(
       await readFile(
@@ -803,4 +805,87 @@ test("students cannot archive or restore modules; restoring a draft does not pub
     await asUser(2);
     assert.equal(await count("modules"), 0);
     assert.equal(await count("lessons"), 0);
+  }));
+
+test("permanent module deletion requires archive, exact confirmation and active administrator", async () => {
+  await actor(1, async () => {
+    await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]));
+    await db.query("update public.modules set archived_at=now() where id=$1", [id(10)]);
+    await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'wrong title')", [id(10)]));
+    for (const n of [2,4]) {
+      await asUser(n);
+      await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]));
+    }
+    await asUser(1);
+    assert.equal(await count("modules"), 3);
+    assert.equal(await count("file_deletion_queue"), 0);
+  });
+});
+
+test("module deletion removes its descendants only and durably queues associated files", () =>
+  actor(2, async () => {
+    await db.query("insert into public.lesson_progress(student_id,lesson_id) values($1,$2)", [id(2),id(20)]);
+    await asUser(1);
+    await db.query("update public.modules set archived_at=now(),cover_path='test/cover.png' where id=$1", [id(10)]);
+    await db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]);
+    assert.equal(await count("modules"), 2);
+    assert.equal(await count("lessons"), 2);
+    assert.equal(await count("lesson_attachments"), 0);
+    assert.equal(await count("lesson_progress"), 0);
+    assert.equal(await count("module_access"), 2);
+    assert.equal(await count("profiles"), 4);
+    const queue = (await db.query("select * from public.file_deletion_queue order by bucket")).rows;
+    assert.deepEqual(queue, [{bucket:"lesson-attachments",path:"test/file.pdf"},{bucket:"module-covers",path:"test/cover.png"}]);
+    // DB metadata deletion must not pretend to remove actual Storage bytes.
+    assert.equal((await db.query("select * from storage.objects")).rows.length,1);
+    await asUser(2);
+    assert.equal(await count("file_deletion_queue"),0);
+    await rejectsStatement(() => db.query("insert into public.file_deletion_queue values('module-covers','arbitrary')"));
+    await db.query("delete from public.file_deletion_queue");
+    await asUser(1);
+    assert.equal(await count("file_deletion_queue"),2);
+    await db.query("delete from public.file_deletion_queue where bucket='module-covers'");
+    assert.equal(await count("file_deletion_queue"),1);
+  }));
+
+test("Auth deletion atomically removes only an inactive student's profile, access, progress and sessions", () =>
+  actor(2, async () => {
+    await db.query("insert into public.lesson_progress(student_id,lesson_id) values($1,$2)", [id(2),id(20)]);
+    await asUser(1);
+    await db.query("select public.admin_update_student($1,'Test','User','hr',false)", [id(2)]);
+    await db.exec("set local role supabase_auth_admin");
+    await db.query("delete from auth.users where id=$1", [id(2)]);
+    await db.exec("set local role authenticated");
+    assert.equal(await count("profiles"),3);
+    assert.equal(await count("lesson_progress"),0);
+    assert.equal(await count("module_access"),2);
+    assert.equal(await count("modules"),3);
+    await asUser(2);
+    assert.equal((await db.query("select public.is_active_user() as active")).rows[0].active,false);
+  }));
+
+test("Auth deletion guard rejects active students and all administrators without partial deletion", () =>
+  actor(1, async () => {
+    await db.exec("set local role supabase_auth_admin");
+    for (const n of [1,2]) {
+      await rejectsStatement(() => db.query("delete from auth.users where id=$1", [id(n)]));
+      assert.equal((await db.query("select id from auth.users where id=$1", [id(n)])).rows.length,1);
+    }
+    await db.exec("set local role authenticated");
+    assert.equal(await count("profiles"),4);
+    await rejectsStatement(() => db.query("delete from public.profiles where id=$1", [id(4)]));
+  }));
+
+test("inactive and revoked administrators cannot permanently delete modules", () =>
+  actor(1, async () => {
+    await db.query("update public.modules set archived_at=now() where id=$1", [id(10)]);
+    await db.exec("reset role");
+    await db.query("update public.profiles set active=false where id=$1", [id(1)]);
+    await db.exec("set local role authenticated");
+    await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]));
+    await db.exec("reset role");
+    await db.query("update public.profiles set active=true where id=$1", [id(1)]);
+    await db.query("delete from auth.sessions where user_id=$1", [id(1)]);
+    await db.exec("set local role authenticated");
+    await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]));
   }));

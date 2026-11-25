@@ -1,4 +1,15 @@
 export default {
+  deleteModule: "Permanently delete module",
+  deleteStudent: "Permanently delete student",
+  deleteModuleHelp: "Deletes the module, its lessons, linked attachments and cover, assigned access and all student progress in this module. It cannot be restored afterwards. Videos remain in the Bunny library.",
+  deleteStudentHelp: "Deletes this student’s sign-in account, profile, all assigned access and progress. This cannot be undone.",
+  permanentDelete: "Permanently delete",
+  deleteConfirmLabel: "To confirm, type exactly",
+  cancelDelete: "Cancel",
+  deleteFailed: "Deletion failed. Refresh and check that the module is archived or the student is inactive and the confirmation matches. If it keeps failing, check the deletion configuration.",
+  cleanupPending: "The module was deleted, but some of its files are still awaiting cleanup. Please retry.",
+  retryCleanup: "Retry file cleanup",
+
   archive: "Archive",
   activeModules: "Active modules",
   archiveModule: "Archive module",

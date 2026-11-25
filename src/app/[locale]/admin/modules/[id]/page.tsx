@@ -1,3 +1,4 @@
+import { PermanentDelete } from "@/components/admin/deletion";
 import { readAll } from "@/lib/read-all";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -49,6 +50,7 @@ export default async function Page({
       <Link href={`/${locale}/admin/modules`}>{t.backModules}</Link>
       <h1>{item.title}</h1>
       <ModuleArchive locale={locale} module={item} />
+      {item.archived_at && <PermanentDelete locale={locale} kind="module" id={item.id} label={item.title} />}
       <div className="admin-grid">
         <section className="card">
           <ModuleForm locale={locale} module={item} />

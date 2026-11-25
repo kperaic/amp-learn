@@ -1,3 +1,4 @@
+import { FileCleanup } from "@/components/admin/deletion";
 import Link from "next/link";
 import { readAll } from "@/lib/read-all";
 import { requireAdmin } from "@/lib/auth";
@@ -24,6 +25,8 @@ export default async function Page({
       .range(from, to),
   );
   if (error) throw Error("Modules unavailable");
+  const cleanup = archived ? await supabase.from("file_deletion_queue").select("path", { count: "exact", head: true }) : null;
+  if (cleanup?.error) throw Error("Cleanup status unavailable");
   const items = (
     data as (ModuleRow & {
       lessons: { count: number }[];
@@ -41,6 +44,7 @@ export default async function Page({
         <Link className="button secondary" href={`/${locale}/admin/modules?archive=1`}>{t.archive}</Link>
       </nav>
       <p className="muted">{archived ? t.archiveHelp : t.modulesHelp}</p>
+      {!!cleanup?.count && <FileCleanup locale={locale} />}
       <section className="card">
         {archived && !items.length ? <p className="muted">{t.archiveEmpty}</p> : <OrderedList
           locale={locale}

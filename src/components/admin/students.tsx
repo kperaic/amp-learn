@@ -1,4 +1,5 @@
 "use client";
+import { PermanentDelete } from "./deletion";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -340,6 +341,7 @@ export function StudentEditor({
           </form>
         </section>
       </div>
+      {!student.active && <PermanentDelete locale={locale} kind="student" id={student.id} label={student.email} disabled={busy || profileDirty || accessDirty} />}
     </>
   );
 }

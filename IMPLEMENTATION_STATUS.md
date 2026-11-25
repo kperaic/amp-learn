@@ -1,3 +1,17 @@
+# Permanent deletion — 2026-11-25
+
+Implemented locally on staging, following the explicit request to delete archived modules and inactive students. No real records were deleted and no remote migration was applied by the agent. The user authorized pushing these changes to staging; migration 005 remains a deployment prerequisite and its remote application has not been confirmed.
+
+- Archived module detail: typed exact-title confirmation; the admin-only RPC locks and verifies the module and deletes its lessons, attachment metadata, assignments and progress in one transaction. Active modules cannot be deleted. Direct module/lesson DELETE grants remain revoked.
+- Linked attachment/cover files are recorded in a durable cleanup queue in the same transaction. The server removes them through the Storage API in bounded batches; failures retain the queue, with a retry button in Archive. Bunny videos and unrelated/previously orphaned Storage files are not deleted.
+- Inactive student detail: typed exact-email confirmation, current admin authorization, current directory lookup, self-deletion rejection, then server-only Auth Admin `deleteUser(id, false)`. Auth deletion cascades profile/access/progress atomically. A database trigger blocks deletion of active students and every administrator, including reactivation races. Direct profile DELETE remains ungranted. This protection also applies to deletion through the Supabase dashboard.
+
+Required before deployment: apply the new `supabase/migrations/202611250005_permanent_deletion.sql` with explicit approval or manually in Supabase SQL Editor. Migrations 001–004 are unchanged. The app uses its existing server-only secret for Auth Admin deletion. No credentials were changed.
+
+Validation: 49 isolated PGlite permission/deletion tests passed, along with TypeScript and targeted ESLint. No live Auth/Storage deletion or browser acceptance has been performed. After migration/deployment, use disposable fixtures to confirm inactive account removal from Auth and the app, active-account protection, module deletion and file-cleanup retry. Auth deletion follows the supported API: https://supabase.com/docs/reference/javascript/auth-admin-deleteuser .
+
+---
+
 # Module archiving — 2026-11-25
 
 Implemented locally on staging following the user request: admin archive/restore control, Active modules/Archive views, archived labels in access management, and student access denial through RLS and server-side lesson authorization. Archiving preserves publication status, lessons, assignments, attachments and progress. Restoring published modules makes them available again to assigned active students; restored drafts remain hidden. Bunny assets are not deleted. Already-issued signed media URLs retain their existing expiry.
