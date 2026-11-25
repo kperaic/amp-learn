@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { readAll } from "@/lib/read-all";
 import { requireAdmin } from "@/lib/auth";
 import { localeOf, messages } from "@/lib/i18n";
@@ -5,12 +6,15 @@ import { ModuleForm, OrderedList } from "@/components/admin/modules";
 import type { ModuleRow } from "@/lib/admin-types";
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ archive?: string }>;
 }) {
   const locale = localeOf((await params).locale),
     t = messages(locale),
     { supabase } = await requireAdmin(locale);
+  const archived = (await searchParams).archive === "1";
   const { data, error } = await readAll((from, to) =>
     supabase
       .from("modules")
@@ -25,26 +29,31 @@ export default async function Page({
       lessons: { count: number }[];
       module_access: { count: number }[];
     })[]
-  ).map((m) => ({
+  ).filter((m) => !!m.archived_at === archived).map((m) => ({
     ...m,
     detail: `${t.lessons}: ${m.lessons[0]?.count || 0} · ${t.assigned}: ${m.module_access[0]?.count || 0}`,
   }));
   return (
     <>
-      <h1>{t.modules}</h1>
-      <p className="muted">{t.modulesHelp}</p>
+      <h1>{archived ? t.archive : t.modules}</h1>
+      <nav className="button-row">
+        <Link className="button secondary" href={`/${locale}/admin/modules`}>{t.activeModules}</Link>
+        <Link className="button secondary" href={`/${locale}/admin/modules?archive=1`}>{t.archive}</Link>
+      </nav>
+      <p className="muted">{archived ? t.archiveHelp : t.modulesHelp}</p>
       <section className="card">
-        <OrderedList
+        {archived && !items.length ? <p className="muted">{t.archiveEmpty}</p> : <OrderedList
           locale={locale}
           kind="modules"
           parent={null}
           items={items}
-        />
+          sortable={!archived}
+        />}
       </section>
-      <section className="card">
+      {!archived && <section className="card">
         <h2>{t.createModule}</h2>
         <ModuleForm locale={locale} />
-      </section>
+      </section>}
     </>
   );
 }

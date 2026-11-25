@@ -6,6 +6,7 @@ export type ModuleRow = {
   status: "draft" | "published";
   sort_order: number;
   cover_path: string | null;
+  archived_at: string | null;
   updated_at: string;
 };
 export type LessonRow = {

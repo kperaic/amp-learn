@@ -335,3 +335,16 @@ export async function finishCover(
   refresh(locale);
   return { data: undefined };
 }
+
+export async function setModuleArchived(locale: Locale, id: string, archived: boolean): Promise<Result> {
+  localeOf(locale);
+  const { supabase } = await requireAdmin(locale);
+  if (!uuid.safeParse(id).success || typeof archived !== "boolean") return { error: "invalidFields" };
+  const { data, error } = await supabase.from("modules")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id).select("id").maybeSingle();
+  if (error || !data) return { error: "failed" };
+  revalidatePath(`/${locale}/admin`, "layout");
+  revalidatePath(`/${locale}/learn`, "layout");
+  return { data: undefined };
+}

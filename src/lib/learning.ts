@@ -44,7 +44,7 @@ export async function authorizedLesson(
   if (moduleResult.error || !moduleResult.data) return null;
   if (
     profile.role !== "super_admin" &&
-    (lesson.data.status !== "published" || moduleResult.data.status !== "published")
+    (lesson.data.status !== "published" || moduleResult.data.status !== "published" || moduleResult.data.archived_at)
   )
     return null;
   return { lesson: lesson.data as LessonRow, module: moduleResult.data as ModuleRow };

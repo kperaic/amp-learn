@@ -32,6 +32,7 @@ alter table storage.objects enable row level security;grant select,insert,update
     "202611240001_foundation.sql",
     "202611240002_private_storage.sql",
     "202611240003_admin_experience.sql",
+    "202611250004_module_archive.sql",
   ])
     await db.exec(
       await readFile(
@@ -767,4 +768,39 @@ test("ready attachments in draft or unassigned lessons remain invisible to stude
       );
     await asUser(2);
     assert.equal(await count("lesson_attachments"), 1);
+  }));
+
+test("archive denies student module, lesson and attachment reads and restores preserved progress", async () => {
+ await actor(2, async () => {
+  await db.query("insert into public.lesson_progress(student_id,lesson_id) values($1,$2)",[id(2),id(20)]);
+  await asUser(1);
+  await db.query("update public.modules set archived_at=now() where id=$1",[id(10)]);
+  await db.exec("set local role authenticated");
+  await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({sub:id(2),session_id:id(102)})]);
+  assert.equal((await db.query("select * from public.modules where id=$1",[id(10)])).rows.length,0);
+  assert.equal((await db.query("select * from public.lessons where id=$1",[id(20)])).rows.length,0);
+  assert.equal((await db.query("select * from public.lesson_attachments where lesson_id=$1",[id(20)])).rows.length,0);
+  await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({sub:id(1),session_id:id(101)})]);
+  assert.equal((await db.query("select * from public.lesson_progress where student_id=$1",[id(2)])).rows.length,1);
+  await db.query("select public.admin_reorder('modules',null,$1::uuid[])",[[id(11),id(12)]]);
+  await db.query("update public.modules set archived_at=null where id=$1",[id(10)]);
+  await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({sub:id(2),session_id:id(102)})]);
+  assert.equal((await db.query("select status from public.modules where id=$1",[id(10)])).rows[0].status,'published');
+  assert.equal((await db.query("select * from public.lesson_progress where lesson_id=$1",[id(20)])).rows.length,1);
+ });
+});
+
+test("students cannot archive or restore modules; restoring a draft does not publish it", () =>
+  actor(2, async () => {
+    assert.equal((await db.query("update public.modules set archived_at=now() where id=$1 returning id", [id(10)])).rows.length, 0);
+    await asUser(1);
+    await db.query("update public.modules set archived_at=now() where id in ($1,$2)", [id(10),id(12)]);
+    await asUser(2);
+    assert.equal((await db.query("update public.modules set archived_at=null where id=$1 returning id", [id(10)])).rows.length, 0);
+    await asUser(1);
+    await db.query("update public.modules set archived_at=null where id=$1", [id(12)]);
+    assert.equal((await db.query("select status from public.modules where id=$1", [id(12)])).rows[0].status, "draft");
+    await asUser(2);
+    assert.equal(await count("modules"), 0);
+    assert.equal(await count("lessons"), 0);
   }));

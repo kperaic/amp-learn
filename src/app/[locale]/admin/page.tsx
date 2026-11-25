@@ -23,7 +23,7 @@ export default async function Page({
     supabase
       .from("modules")
       .select("id", { count: "exact", head: true })
-      .eq("status", "published"),
+      .eq("status", "published").is("archived_at", null),
     supabase.from("lessons").select("id", { count: "exact", head: true }),
   ]);
   if (results.some((r) => r.error)) throw Error("Dashboard unavailable");

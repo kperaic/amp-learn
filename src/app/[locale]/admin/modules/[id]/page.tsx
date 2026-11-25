@@ -6,6 +6,7 @@ import { localeOf, messages } from "@/lib/i18n";
 import { uuid } from "@/lib/admin-validation";
 import {
   ModuleForm,
+  ModuleArchive,
   OrderedList,
   NewLesson,
   CoverUpload,
@@ -47,6 +48,7 @@ export default async function Page({
     <>
       <Link href={`/${locale}/admin/modules`}>{t.backModules}</Link>
       <h1>{item.title}</h1>
+      <ModuleArchive locale={locale} module={item} />
       <div className="admin-grid">
         <section className="card">
           <ModuleForm locale={locale} module={item} />

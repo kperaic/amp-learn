@@ -1,3 +1,13 @@
+# Module archiving — 2026-11-25
+
+Implemented locally on staging following the user request: admin archive/restore control, Active modules/Archive views, archived labels in access management, and student access denial through RLS and server-side lesson authorization. Archiving preserves publication status, lessons, assignments, attachments and progress. Restoring published modules makes them available again to assigned active students; restored drafts remain hidden. Bunny assets are not deleted. Already-issued signed media URLs retain their existing expiry.
+
+The user confirmed applying `supabase/migrations/202611250004_module_archive.sql` on 2026-11-25 and authorized pushing the archive changes to staging. It adds nullable `archived_at` and replaces module-read/reorder functions. Local validation used isolated PGlite fixtures; remote application is user-confirmed, not independently rechecked. Staging publication proceeds through the configured Netlify branch deploy.
+
+Validation: 52 permission/learning tests passed, TypeScript passed, targeted ESLint reported no errors (three existing style/image warnings). Live provider/browser acceptance remains to be checked after applying the migration: archive an assigned published module, check student list/direct lesson URL, restore it and verify access/progress; repeat with a draft.
+
+---
+
 # AMP Learn — Phase 4B deployment preparation
 
 Prepared 2026-11-25 for `https://learn.ampdigital.hr`. See [deployment handover](docs/DEPLOYMENT.md) for environment scopes, exact Supabase production/local redirects, staging setup, Netlify import, Bunny hostname addition, Serverlab CNAME instructions and ordered smoke checks.

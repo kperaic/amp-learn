@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   saveModule,
+  setModuleArchived,
   createLesson,
   reorder,
   prepareCover,
@@ -99,8 +100,10 @@ export function OrderedList({
   kind,
   parent,
   items,
+  sortable = true,
 }: {
   locale: Locale;
+  sortable?: boolean;
   kind: "modules" | "lessons";
   parent: string | null;
   items: { id: string; title: string; status: string; detail?: string }[];
@@ -141,7 +144,7 @@ export function OrderedList({
             <span className="badge">
               {item.status === "published" ? t.published : t.draft}
             </span>
-            <div className="button-row">
+            {sortable && <div className="button-row">
               <button
                 className="secondary compact"
                 disabled={busy || i === 0}
@@ -158,7 +161,7 @@ export function OrderedList({
               >
                 {t.down}
               </button>
-            </div>
+            </div>}
           </article>
         ))}
       </div>
@@ -271,4 +274,25 @@ export function CoverUpload({
       <Feedback locale={locale} code={code} />
     </section>
   );
+}
+
+export function ModuleArchive({ locale, module }: { locale: Locale; module: ModuleRow }) {
+  const t = messages(locale), router = useRouter();
+  const [busy, setBusy] = useState(false), [code, setCode] = useState("");
+  const archived = !!module.archived_at;
+  return <section className="card">
+    <h2>{archived ? t.archive : t.archiveModule}</h2>
+    <p>{t.archiveHelp}</p>
+    <button className="secondary" disabled={busy} onClick={async () => {
+      if (!archived && !confirm(t.archiveConfirm)) return;
+      setBusy(true); setCode("");
+      try {
+        const result = await setModuleArchived(locale, module.id, !archived);
+        if (result.error) setCode(result.error);
+        else router.refresh();
+      } catch { setCode("failed"); }
+      finally { setBusy(false); }
+    }}>{busy ? t.working : archived ? t.restoreModule : t.archiveModule}</button>
+    <Feedback locale={locale} code={code} />
+  </section>;
 }

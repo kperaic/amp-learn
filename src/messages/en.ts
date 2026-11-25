@@ -1,4 +1,12 @@
 export default {
+  archive: "Archive",
+  activeModules: "Active modules",
+  archiveModule: "Archive module",
+  restoreModule: "Restore from archive",
+  archiveHelp: "Archived modules are hidden from students. Lessons, access and progress are preserved. Restoring retains the previous publication status.",
+  archiveConfirm: "Archive this module? Students will not see it until restored. Content and progress are preserved.",
+  archiveEmpty: "The archive is empty.",
+
   app: "AMP Learn",
   tagline: "A place for your knowledge.",
   login: "Sign in",

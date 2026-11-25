@@ -169,7 +169,7 @@ export function AccessPicker({
   grantedAt,
 }: {
   locale: Locale;
-  modules: { id: string; title: string; status: string }[];
+  modules: { id: string; title: string; status: string; archived_at?: string | null }[];
   selected: string[];
   onChange: (v: string[]) => void;
   grantedAt?: Record<string, string>;
@@ -219,7 +219,7 @@ export function AccessPicker({
               </small>
             )}
           </span>
-          <small>{m.status === "published" ? t.published : t.draft}</small>
+          <small>{m.archived_at ? t.archive : m.status === "published" ? t.published : t.draft}</small>
         </label>
       ))}
     </fieldset>

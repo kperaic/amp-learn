@@ -1,4 +1,12 @@
 export default {
+  archive: "Arhiva",
+  activeModules: "Aktivni moduli",
+  archiveModule: "Arhiviraj modul",
+  restoreModule: "Vrati iz arhive",
+  archiveHelp: "Arhivirani modul nije vidljiv polaznicima. Lekcije, pristupi i napredak ostaju sačuvani. Vraćanje zadržava prethodni status objave.",
+  archiveConfirm: "Arhivirati modul? Polaznici ga neće vidjeti dok ga ne vratite iz arhive. Sadržaj i napredak ostaju sačuvani.",
+  archiveEmpty: "Arhiva je prazna.",
+
   app: "AMP Learn",
   tagline: "Prostor za vaše znanje.",
   login: "Prijava",
