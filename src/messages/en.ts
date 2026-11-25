@@ -1,4 +1,8 @@
 export default {
+  deleteLesson: "Delete lesson",
+  deleteLessonHelp: "Permanently deletes this lesson, its attachments and student progress for this lesson. Other lessons are preserved. The video remains in the Bunny library. This cannot be undone.",
+  lessonDeleteFailed: "Lesson deletion failed. Refresh the page and check that the typed title matches the saved lesson title.",
+
   deleteModule: "Permanently delete module",
   deleteStudent: "Permanently delete student",
   deleteModuleHelp: "Deletes the module, its lessons, linked attachments and cover, assigned access and all student progress in this module. It cannot be restored afterwards. Videos remain in the Bunny library.",
@@ -7,7 +11,7 @@ export default {
   deleteConfirmLabel: "To confirm, type exactly",
   cancelDelete: "Cancel",
   deleteFailed: "Deletion failed. Refresh and check that the module is archived or the student is inactive and the confirmation matches. If it keeps failing, check the deletion configuration.",
-  cleanupPending: "The module was deleted, but some of its files are still awaiting cleanup. Please retry.",
+  cleanupPending: "The content was deleted, but some of its files are still awaiting cleanup. Please retry.",
   retryCleanup: "Retry file cleanup",
 
   archive: "Archive",

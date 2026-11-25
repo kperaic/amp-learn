@@ -1,4 +1,8 @@
 export default {
+  deleteLesson: "Obriši lekciju",
+  deleteLessonHelp: "Trajno se brišu ova lekcija, njezini privici i napredak polaznika za ovu lekciju. Ostale lekcije ostaju sačuvane. Videozapis ostaje u Bunny biblioteci. Ova radnja nije povratna.",
+  lessonDeleteFailed: "Brisanje lekcije nije uspjelo. Osvježite stranicu i provjerite da upisani naziv odgovara spremljenom nazivu lekcije.",
+
   deleteModule: "Trajno brisanje modula",
   deleteStudent: "Trajno brisanje polaznika",
   deleteModuleHelp: "Brišu se modul, njegove lekcije, povezani privici i naslovnica, dodijeljeni pristupi i napredak svih polaznika u tom modulu. Nema vraćanja iz arhive nakon brisanja. Videozapisi ostaju u Bunny biblioteci.",
@@ -7,7 +11,7 @@ export default {
   deleteConfirmLabel: "Za potvrdu upišite točno",
   cancelDelete: "Odustani",
   deleteFailed: "Brisanje nije uspjelo. Osvježite stranicu i provjerite da je modul arhiviran ili polaznik neaktivan te da potvrda odgovara. Ako se pogreška ponovi, provjerite postavke brisanja.",
-  cleanupPending: "Modul je obrisan, ali neke njegove datoteke još čekaju čišćenje. Pokušajte ponovno.",
+  cleanupPending: "Sadržaj je obrisan, ali neke njegove datoteke još čekaju čišćenje. Pokušajte ponovno.",
   retryCleanup: "Ponovi čišćenje datoteka",
 
   archive: "Arhiva",

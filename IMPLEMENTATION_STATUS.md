@@ -1,3 +1,13 @@
+# Individual lesson deletion — 2026-11-25
+
+Implemented locally on staging: lesson detail now offers permanent deletion with exact saved-title confirmation, without any archive requirement. Both draft and published lessons can be deleted by an active administrator. The transaction removes only the selected lesson, attachment metadata and its progress; module access, the module and other lessons remain intact. Bunny videos are retained. File cleanup uses the existing durable queue, with retry available on the module list as well as Archive. After deletion, the UI returns to the parent module.
+
+Required before deploying: apply `supabase/migrations/202611250006_lesson_deletion.sql` after migration 005, with explicit approval or manually in Supabase SQL Editor. Applied migrations were not changed. No remote migration or real-data deletion was performed by the agent. The user authorized pushing this feature to staging; remote application of migration 006 has not been confirmed.
+
+Validation: 52 isolated permission tests passed, including lesson deletion, preserved sibling progress and access, wrong/missing confirmation, missing lesson and unauthorized/inactive/revoked callers. TypeScript and targeted ESLint passed. Live provider/browser deletion has not been tested.
+
+---
+
 # Permanent deletion — 2026-11-25
 
 Implemented locally on staging, following the explicit request to delete archived modules and inactive students. No real records were deleted and no remote migration was applied by the agent. The user authorized pushing these changes to staging; migration 005 remains a deployment prerequisite and its remote application has not been confirmed.

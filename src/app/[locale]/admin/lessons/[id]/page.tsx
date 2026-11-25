@@ -1,3 +1,4 @@
+import { PermanentDelete } from "@/components/admin/deletion";
 import { readAll } from "@/lib/read-all";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,6 +54,7 @@ export default async function Page({
         lesson={id}
         attachments={a.data as AttachmentRow[]}
       />
+      <PermanentDelete locale={locale} kind="lesson" id={id} label={lesson.title} moduleId={lesson.module_id} />
     </>
   );
 }

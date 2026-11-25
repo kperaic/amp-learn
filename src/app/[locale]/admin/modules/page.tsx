@@ -25,7 +25,7 @@ export default async function Page({
       .range(from, to),
   );
   if (error) throw Error("Modules unavailable");
-  const cleanup = archived ? await supabase.from("file_deletion_queue").select("path", { count: "exact", head: true }) : null;
+  const cleanup = await supabase.from("file_deletion_queue").select("path", { count: "exact", head: true });
   if (cleanup?.error) throw Error("Cleanup status unavailable");
   const items = (
     data as (ModuleRow & {

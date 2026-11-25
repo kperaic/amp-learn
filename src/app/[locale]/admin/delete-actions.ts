@@ -57,3 +57,17 @@ export async function deleteInactiveStudent(locale: Locale, id: string, confirma
   revalidatePath(`/${locale}/admin`, "layout");
   return { data: undefined };
 }
+
+export async function deleteLesson(locale: Locale, id: string, confirmation: string): Promise<Result> {
+  localeOf(locale);
+  const { supabase } = await requireAdmin(locale);
+  if (!uuid.safeParse(id).success || typeof confirmation !== "string" || !confirmation || confirmation.length > 200)
+    return { error: "invalidFields" };
+  const { error } = await supabase.rpc("admin_delete_lesson", { target: id, confirmation });
+  if (error) return { error: "lessonDeleteFailed" };
+  // Committed deletion stays successful even if Storage cleanup needs a retry.
+  try { await cleanupDeletedFiles(locale); } catch { /* Retry from the module list. */ }
+  revalidatePath(`/${locale}/admin`, "layout");
+  revalidatePath(`/${locale}/learn`, "layout");
+  return { data: undefined };
+}

@@ -35,6 +35,7 @@ alter table storage.objects enable row level security;grant select,insert,update
     "202611240003_admin_experience.sql",
     "202611250004_module_archive.sql",
     "202611250005_permanent_deletion.sql",
+    "202611250006_lesson_deletion.sql",
   ])
     await db.exec(
       await readFile(
@@ -889,3 +890,51 @@ test("inactive and revoked administrators cannot permanently delete modules", ()
     await db.exec("set local role authenticated");
     await rejectsStatement(() => db.query("select public.admin_delete_archived_module($1,'Test module')", [id(10)]));
   }));
+
+test("delete published lesson preserves its module, assignments, other lessons and their progress", () =>
+  actor(2, async () => {
+    await db.query("insert into public.lesson_progress(student_id,lesson_id) values($1,$2)", [id(2),id(20)]);
+    await asUser(3);
+    await db.query("insert into public.lesson_progress(student_id,lesson_id) values($1,$2)", [id(3),id(22)]);
+    await asUser(1);
+    await db.query("select public.admin_delete_lesson($1,'Test lesson')", [id(20)]);
+    assert.equal(await count("modules"),3);
+    assert.equal(await count("module_access"),4);
+    assert.equal(await count("lessons"),3);
+    assert.equal(await count("lesson_attachments"),0);
+    assert.deepEqual((await db.query("select lesson_id from public.lesson_progress")).rows,[{lesson_id:id(22)}]);
+    assert.deepEqual((await db.query("select * from public.file_deletion_queue")).rows,[{bucket:"lesson-attachments",path:"test/file.pdf"}]);
+    await asUser(2);
+    assert.equal((await db.query("select public.can_read_lesson($1) as allowed",[id(20)])).rows[0].allowed,false);
+  }));
+
+test("draft lesson can be deleted without archiving; missing and mismatched confirmations fail atomically", () =>
+  actor(1, async () => {
+    for (const confirmation of ["wrong", null, ""]) {
+      await rejectsStatement(() => db.query("select public.admin_delete_lesson($1,$2)", [id(20),confirmation]));
+    }
+    await rejectsStatement(() => db.query("select public.admin_delete_lesson($1,'Test lesson')", [id(999)]));
+    assert.equal(await count("lesson_attachments"),1);
+    assert.equal(await count("file_deletion_queue"),0);
+    await db.query("select public.admin_delete_lesson($1,'Test lesson')", [id(21)]);
+    assert.equal(await count("lessons"),3);
+    assert.equal(await count("lesson_attachments"),1);
+    assert.equal(await count("file_deletion_queue"),0);
+    await rejectsStatement(() => db.query("select public.admin_delete_lesson($1,'Test lesson')", [id(21)]));
+  }));
+
+test("lesson deletion rejects students, inactive admins, revoked sessions and anonymous callers", async () => {
+  for (const n of [2,4]) await actor(n, () => assert.rejects(() => db.query("select public.admin_delete_lesson($1,'Test lesson')",[id(20)])));
+  await actor(1, () => assert.rejects(() => db.query("select public.admin_delete_lesson($1,'Test lesson')",[id(20)])), "anon");
+  await actor(1, async () => {
+    await db.exec("reset role");
+    await db.query("update public.profiles set active=false where id=$1",[id(1)]);
+    await db.exec("set local role authenticated");
+    await rejectsStatement(() => db.query("select public.admin_delete_lesson($1,'Test lesson')",[id(20)]));
+    await db.exec("reset role");
+    await db.query("update public.profiles set active=true where id=$1",[id(1)]);
+    await db.query("delete from auth.sessions where user_id=$1",[id(1)]);
+    await db.exec("set local role authenticated");
+    await rejectsStatement(() => db.query("select public.admin_delete_lesson($1,'Test lesson')",[id(20)]));
+  });
+});
