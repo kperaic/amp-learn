@@ -311,3 +311,22 @@ test("management lists do not return partial selections after a page failure", a
   );
   assert.deepEqual(result, { data: [], error: "unavailable" });
 });
+
+test("actual editor link JSON accepts the reported Google Docs URL and distinguishes validation failures", async () => {
+  const { getSchema } = await import("@tiptap/core");
+  const { default: StarterKit } = await import("@tiptap/starter-kit");
+  const { default: Link } = await import("@tiptap/extension-link");
+  const { validateLessonDocument } = await import("../src/lib/lesson-document.ts");
+  const schema = getSchema([StarterKit.configure({ link: false, underline: false }), Link]);
+  const doc = schema.node("doc", null, [schema.node("paragraph", null, [
+    schema.text("Na ovom "), schema.text("linku\u00a0", [schema.mark("link", {
+      href: "https://docs.google.com/document/d/19jsj9Voy-OjZp7lEt94FuHcTH6RRYhY8tMgZra8YPh8/edit?usp=sharing",
+    })]), schema.text("se nalazi blog post koji moraš objaviti na stranici.\u00a0"),
+  ])]).toJSON();
+  assert.ok(validateLessonDocument(doc).data);
+  const broken = structuredClone(doc);
+  broken.content[0].content[1].marks[0].attrs.href = "javascript:alert(1)";
+  assert.equal(validateLessonDocument(broken).error, "invalidDocumentLink");
+  assert.equal(validateLessonDocument({type:"doc",content:[{type:"text",text:"x".repeat(450001)}]}).error,"documentTooLarge");
+  assert.equal(validateLessonDocument({type:"doc",content:[{type:"iframe"}]}).error,"invalidDocument");
+});

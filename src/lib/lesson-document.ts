@@ -61,7 +61,9 @@ export const lessonNodeSchema: z.ZodType<LessonNode> = z.lazy(() =>
     content: z.array(lessonNodeSchema).max(5000).optional(),
   }),
 );
-export function parseLessonDocument(value: unknown): LessonNode | null {
+export function validateLessonDocument(value: unknown):
+  | { data: LessonNode; error?: never }
+  | { data?: never; error: "invalidDocument" | "documentTooLarge" | "invalidDocumentLink" } {
   // Bound recursion before invoking the recursive schema.
   function bounded(node: unknown, depth: number): boolean {
     if (depth > 20 || !node || typeof node !== "object") return false;
@@ -72,13 +74,30 @@ export function parseLessonDocument(value: unknown): LessonNode | null {
         n.content.every((child) => bounded(child, depth + 1)))
     );
   }
-  if (
-    new TextEncoder().encode(JSON.stringify(value)).length > 450000 ||
-    !bounded(value, 0)
-  )
-    return null;
+  let serialized: string | undefined;
+  try { serialized = JSON.stringify(value); }
+  catch { return { error: "invalidDocument" }; }
+  if (serialized && new TextEncoder().encode(serialized).length > 450000)
+    return { error: "documentTooLarge" };
+  if (!bounded(value, 0)) return { error: "invalidDocument" };
   const result = lessonNodeSchema.safeParse(value);
-  return result.success && result.data.type === "doc" ? result.data : null;
+  if (!result.success) {
+    // Inspect link attributes separately: Zod wraps mark errors inside a union.
+    function invalidLink(node: LessonNode): boolean {
+      return !!node.marks?.some((mark) => mark.type === "link" && !linkAttrs.safeParse(mark.attrs).success)
+        || !!node.content?.some(invalidLink);
+    }
+    // Only traverse well-shaped arrays; malformed payloads remain format errors.
+    try { if (invalidLink(value as LessonNode)) return { error: "invalidDocumentLink" }; }
+    catch { /* Invalid structure is handled below. */ }
+    if (result.error.issues.some((issue) => issue.code === "too_big" && issue.path.at(-1) === "text"))
+      return { error: "documentTooLarge" };
+    return { error: "invalidDocument" };
+  }
+  return result.data.type === "doc" ? { data: result.data } : { error: "invalidDocument" };
+}
+export function parseLessonDocument(value: unknown): LessonNode | null {
+  return validateLessonDocument(value).data ?? null;
 }
 export const emptyLessonDocument: LessonNode = {
   type: "doc",

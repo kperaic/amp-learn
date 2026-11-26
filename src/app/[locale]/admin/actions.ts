@@ -11,7 +11,7 @@ import {
   fileInput,
   parseBunnyVideo,
 } from "@/lib/admin-validation";
-import { parseLessonDocument } from "@/lib/lesson-document";
+import { validateLessonDocument } from "@/lib/lesson-document";
 import { inspectVideo } from "@/lib/bunny";
 import type { Result, VideoInfo } from "@/lib/admin-types";
 import { z } from "zod";
@@ -119,8 +119,9 @@ export async function saveLesson(
   if (!uuid.safeParse(id).success || !parsed.success)
     return { error: "invalidFields" };
   const p = parsed.data,
-    content = parseLessonDocument(p.content);
-  if (!content) return { error: "invalidDocument" };
+    document = validateLessonDocument(p.content);
+  if (document.error) return { error: document.error };
+  const content = document.data;
   const old = await supabase
     .from("lessons")
     .select("bunny_video_id")

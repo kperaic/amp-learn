@@ -91,7 +91,9 @@ export default {
     "Potrebno je primijeniti migraciju za administratorske funkcije.",
   saveConflict:
     "Sadržaj je promijenjen u drugom prozoru. Kopirajte svoje izmjene pa osvježite stranicu.",
-  invalidDocument: "Dokument nije valjan ili je prevelik.",
+  invalidDocument: "Opis sadrži nepodržano formatiranje. Kopirajte tekst na sigurno, zatim ga zalijepite bez formatiranja i ponovno dodajte poveznice.",
+  documentTooLarge: "Opis je prevelik. Skratite tekst ili dulje upute dodajte kao privitak.",
+  invalidDocumentLink: "Opis sadrži neispravnu ili predugu poveznicu. Uklonite je i ponovno dodajte punu https:// adresu gumbom Poveznica.",
   video: "Video ID",
   videoHelp:
     "Unesite UUID videa ili Bunny embed URL. Prazno polje uklanja poveznicu; video u Bunnyju ostaje sačuvan.",

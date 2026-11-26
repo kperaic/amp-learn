@@ -4,7 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import LinkExtension from "@tiptap/extension-link";
 import { useState, useEffect } from "react";
 import { saveLesson, checkVideo } from "@/app/[locale]/admin/actions";
-import { safeLessonLink } from "@/lib/lesson-document";
+import { safeLessonLink, validateLessonDocument } from "@/lib/lesson-document";
 import type { Locale } from "@/lib/types";
 import type { LessonRow, VideoInfo } from "@/lib/admin-types";
 import { messages } from "@/lib/i18n";
@@ -69,6 +69,8 @@ export function LessonEditor({
   }, [busy, editor]);
   async function save() {
     if (!editor || busy) return;
+    const document = validateLessonDocument(editor.getJSON());
+    if (document.error) { setCode(document.error); return; }
     setBusy(true);
     setCode("");
     try {
@@ -76,7 +78,7 @@ export function LessonEditor({
         title,
         status,
         video,
-        content: editor.getJSON(),
+        content: document.data,
         version,
       });
       if (r.error !== undefined) setCode(r.error);

@@ -90,7 +90,9 @@ export default {
   setupNeeded: "Apply the admin experience migration first.",
   saveConflict:
     "Another window changed this content. Copy your changes before refreshing.",
-  invalidDocument: "The document is invalid or too large.",
+  invalidDocument: "The description contains unsupported formatting. Keep a copy of your text, then paste it without formatting and add the links again.",
+  documentTooLarge: "The description is too large. Shorten it or add longer instructions as an attachment.",
+  invalidDocumentLink: "The description contains an invalid or overly long link. Remove it and add the full https:// address again using the Link button.",
   video: "Video ID",
   videoHelp:
     "Enter a video UUID or Bunny embed URL. Clear this field to unlink it; the Bunny video is preserved.",
